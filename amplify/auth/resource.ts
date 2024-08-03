@@ -8,4 +8,8 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
+  multifactor: {
+    totp: true,
+    mode: "REQUIRED",
+  },
 });
