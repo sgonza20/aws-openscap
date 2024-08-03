@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, SpaceBetween, Pagination, Modal } from "@cloudscape-design/components";
-import { EC2Client, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
+import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandOutput } from "@aws-sdk/client-ec2";
 
 type EC2Instance = {
   InstanceId: string;
@@ -16,25 +16,30 @@ export function EC2InstanceList() {
 
   useEffect(() => {
     const fetchInstances = async () => {
+      try {
 
-      const ec2Client = new EC2Client({ region: "us-east-2" }); // Lets see how we can adjust this dynamically
+        const ec2Client = new EC2Client({ region: "us-east-1" }); // Update with your desired region
 
+        const command = new DescribeInstancesCommand({});
+        const response: DescribeInstancesCommandOutput = await ec2Client.send(command);
 
-      const command = new DescribeInstancesCommand({});
-      const response = await ec2Client.send(command);
+        console.log("EC2 response:", response);
 
+        const fetchedInstances: EC2Instance[] = (response.Reservations ?? [])
+          .flatMap(reservation =>
+            (reservation.Instances ?? []).map(instance => ({
+              InstanceId: instance.InstanceId ?? "",
+              InstanceType: instance.InstanceType ?? "",
+              State: { Name: instance.State?.Name ?? "" },
+            }))
+          )
+          .filter((instance): instance is EC2Instance => instance.InstanceId !== "");
 
-      const fetchedInstances: EC2Instance[] = (response.Reservations ?? [])
-        .flatMap(reservation =>
-          (reservation.Instances ?? []).map(instance => ({
-            InstanceId: instance.InstanceId ?? "",
-            InstanceType: instance.InstanceType ?? "",
-            State: { Name: instance.State?.Name ?? "" },
-          }))
-        )
-        .filter((instance): instance is EC2Instance => instance.InstanceId !== "");
-
-      setInstances(fetchedInstances);
+        console.log("Fetched instances:", fetchedInstances);
+        setInstances(fetchedInstances);
+      } catch (error) {
+        console.error("Error fetching instances:", error);
+      }
     };
 
     fetchInstances();
@@ -44,6 +49,12 @@ export function EC2InstanceList() {
     setSelectedInstances([]);
     setIsDeleteModalVisible(false);
   }
+
+  // Mock data
+  const mockInstances: EC2Instance[] = [
+    { InstanceId: "i-1234567890abcdef0", InstanceType: "t2.micro", State: { Name: "running" } },
+    { InstanceId: "i-0987654321abcdef0", InstanceType: "t2.medium", State: { Name: "stopped" } }
+  ];
 
   return (
     <>
@@ -77,7 +88,7 @@ export function EC2InstanceList() {
                   cell: (item: EC2Instance) => item.State.Name,
                 },
               ]}
-              items={instances}
+              items={instances.length > 0 ? instances : mockInstances} 
               selectedItems={selectedInstances}
               onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
               pagination={
@@ -122,7 +133,7 @@ export function EC2InstanceList() {
                         variant="primary"
                         onClick={() => {}}
                       >
-                        Create Instance
+                        Run Scan
                       </Button>
                     </SpaceBetween>
                   }
@@ -155,6 +166,7 @@ export function EC2InstanceList() {
           </Box>
         }
       >
+        Are you sure you want to delete the selected instances? This action cannot be undone.
       </Modal>
     </>
   );
