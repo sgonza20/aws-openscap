@@ -39,10 +39,8 @@ export const handler = async (event: any) => {
     const instances = await fetchInstances();
     console.log("Fetched EC2 Instances:", instances);
 
-    return {
-      statusCode: 200,
-      body: instances,
-    };
+    return { instances };
+
   } catch (error) {
     console.error("Error handling request:", error);
 

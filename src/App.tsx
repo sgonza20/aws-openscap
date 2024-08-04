@@ -20,6 +20,9 @@ function EC2InstanceList() {
   async function fetchInstances() {
     try {
       const { data, errors } = await client.queries.GetInstances();
+
+      console.log("Query Result:", { data, errors });
+
       if (errors) {
         console.error("Error fetching instances:", errors);
         return;
