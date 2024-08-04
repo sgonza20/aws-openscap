@@ -59,11 +59,6 @@ function EC2InstanceList() {
         }
         content={
           <ContentLayout>
-            <SpaceBetween size="m" direction="horizontal">
-              <Button onClick={fetchInstances} variant="primary">
-                Refresh
-              </Button>
-            </SpaceBetween>
             <Table
               columnDefinitions={[
                 {
@@ -112,6 +107,9 @@ function EC2InstanceList() {
                   variant="h1"
                   actions={
                     <SpaceBetween size="xs" direction="horizontal">
+                      <Button onClick={fetchInstances} variant="primary">
+                        Refresh
+                      </Button>
                       <Button
                         onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
                         disabled={selectedInstances.length === 0}
