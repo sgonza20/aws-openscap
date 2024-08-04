@@ -22,6 +22,7 @@ import {
           body: "Missing Document Name",
         };
       }
+      console.log("Invoking SSM document with arguments:", event.arguments);
       try {
         const command = new SendCommandCommand({
           InstanceIds: event.arguments.instanceId,
