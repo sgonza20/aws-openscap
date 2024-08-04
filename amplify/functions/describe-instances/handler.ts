@@ -4,6 +4,7 @@ import {
   DescribeInstanceInformationCommandOutput,
   InstanceInformation,
 } from "@aws-sdk/client-ssm";
+import type { Schema } from "../../data/resource";
 
 const ssmClient = new SSMClient();
 
@@ -27,25 +28,29 @@ export const fetchInstances = async () => {
       nextToken = data.NextToken;
     } while (nextToken);
 
-    return allInstances;
+    return allInstances.map(
+      (instance) =>
+        ({
+          InstanceId: instance.InstanceId,
+          PlatformName: instance.PlatformName,
+          PlatformType: instance.PlatformType,
+        } as Schema["Instance"]["type"])
+    );
   } catch (error) {
     console.error("Error fetching instances:", error);
     throw new Error("Failed to fetch instances");
   }
 };
 
-export const handler = async (event: any) => {
+export const handler: Schema["GetInstances"]["functionHandler"] = async (
+  event: any
+) => {
   try {
     const instances = await fetchInstances();
     console.log("Fetched EC2 Instances:", instances);
     return instances;
-
   } catch (error) {
     console.error("Error handling request:", error);
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: (error as Error).message }),
-    };
+    return undefined;
   }
 };
