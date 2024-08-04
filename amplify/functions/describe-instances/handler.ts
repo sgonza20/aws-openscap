@@ -21,15 +21,27 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
         const command = new DescribeInstancesCommand({});
         const data: DescribeInstancesCommandOutput = await ec2Client.send(command);
 
-        const instances: EC2Instance[] = (data.Reservations ?? [])
-            .flatMap((reservation: Reservation) =>
-                (reservation.Instances ?? []).map(instance => ({
-                    InstanceId: instance.InstanceId ?? "",
-                    InstanceType: instance.InstanceType ?? "",
-                    State: { Name: instance.State?.Name ?? "" },
-                }))
-            )
-            .filter(instance => instance.InstanceId !== "");
+        const instances: EC2Instance[] = [];
+
+        if (data.Reservations) {
+            for (const reservation of data.Reservations) {
+                if (reservation.Instances) {
+                    for (const instance of reservation.Instances) {
+                        const instanceObject: EC2Instance = {
+                            InstanceId: instance.InstanceId ?? "",
+                            InstanceType: instance.InstanceType ?? "",
+                            State: {
+                                Name: instance.State?.Name ?? ""
+                            }
+                        };
+
+                        if (instanceObject.InstanceId) {
+                            instances.push(instanceObject);
+                        }
+                    }
+                }
+            }
+        }
 
         return instances;
     } catch (error) {
@@ -37,6 +49,7 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
         throw new Error("Failed to fetch instances");
     }
 };
+
 export const handler = async (event: any) => {
     try {
         const instances = await fetchInstances();
