@@ -16,7 +16,7 @@ interface Reservation {
     }>;
 }
 
-export const fetchInstances = async (): Promise<EC2Instance[]> => {
+export const fetchInstances = async (): Promise<{ List: EC2Instance[] }> => {
     try {
         const command = new DescribeInstancesCommand({});
         const data: DescribeInstancesCommandOutput = await ec2Client.send(command);
@@ -31,7 +31,7 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
             )
             .filter(instance => instance.InstanceId !== "");
 
-        return instances;
+        return { List: instances };
     } catch (error) {
         console.error("Error fetching instances:", error);
         throw new Error("Failed to fetch instances");
@@ -40,13 +40,13 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
 
 export const handler = async (event: any) => {
     try {
-        const instances = await fetchInstances();
+        const { List } = await fetchInstances();
 
-        console.log("Fetched EC2 Instances:", instances);
+        console.log("Fetched EC2 Instances:", List);
 
         return {
             statusCode: 200,
-            instances,
+            body: JSON.stringify({ List }),
         };
     } catch (error) {
         console.error("Error handling request:", error);
