@@ -5,10 +5,11 @@ const schema = a.schema({
   State: a.enum(["running", "stopped", "pending"]),
   Instance: a
     .model({
-      InstanceId: a.string(),
-      InstanceType: a.string(),
-      State: a.string(),
+      InstanceId: a.string().required(),
+      PlatformType: a.string(),
+      PlatformName: a.string(),
     })
+    .identifier(["InstanceId"])
     .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
   GetInstances: a
     .query()
