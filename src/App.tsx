@@ -32,7 +32,8 @@ function EC2InstanceList() {
             InstanceId: instance.InstanceId ?? "",
             InstanceType: instance.InstanceType ?? "",
             State: {
-              Name: instance.State?.Name ?? ""
+              Name: (instance.State as { Name: string } | undefined)?.Name ?? ""
+
             }
           }));
         setInstances(transformedData);

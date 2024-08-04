@@ -2,16 +2,12 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { describeInstances } from '../functions/describe-instances/resource';
 
 const schema = a.schema({
-  State: a
-    .model({
-      Name: a.string(),
-    })
-    .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
+  State: a.enum(["running", "stopped", "pending"]),
   Instance: a
     .model({
       InstanceId: a.string(),
       InstanceType: a.string(),
-      State: a.ref("State"),
+      State: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
   GetInstances: a
