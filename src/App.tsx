@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import type { Schema } from "../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
 import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, SpaceBetween, Pagination, Modal } from "@cloudscape-design/components";
-import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandOutput } from "@aws-sdk/client-ec2";
+
+const client = generateClient<Schema>();
 
 type EC2Instance = {
   InstanceId: string;
@@ -8,53 +11,44 @@ type EC2Instance = {
   State: { Name: string };
 };
 
-export function EC2InstanceList() {
+function EC2InstanceList() {
   const [instances, setInstances] = useState<EC2Instance[]>([]);
   const [selectedInstances, setSelectedInstances] = useState<EC2Instance[]>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
 
-  useEffect(() => {
-    const fetchInstances = async () => {
-      try {
-
-        const ec2Client = new EC2Client({ region: "us-east-1" }); // Update with your desired region
-
-        const command = new DescribeInstancesCommand({});
-        const response: DescribeInstancesCommandOutput = await ec2Client.send(command);
-
-        console.log("EC2 response:", response);
-
-        const fetchedInstances: EC2Instance[] = (response.Reservations ?? [])
-          .flatMap(reservation =>
-            (reservation.Instances ?? []).map(instance => ({
-              InstanceId: instance.InstanceId ?? "",
-              InstanceType: instance.InstanceType ?? "",
-              State: { Name: instance.State?.Name ?? "" },
-            }))
-          )
-          .filter((instance): instance is EC2Instance => instance.InstanceId !== "");
-
-        console.log("Fetched instances:", fetchedInstances);
-        setInstances(fetchedInstances);
-      } catch (error) {
-        console.error("Error fetching instances:", error);
+  async function fetchInstances() {
+    try {
+      const { data, errors } = await client.queries.GetInstances();
+      if (errors) {
+        console.error("Error fetching instances:", errors);
+        return;
       }
-    };
 
+      if (data) {
+        const transformedData: EC2Instance[] = data
+          .filter((instance): instance is NonNullable<typeof instance> => instance !== null && instance !== undefined)
+          .map(instance => ({
+            InstanceId: instance.InstanceId ?? "",
+            InstanceType: instance.InstanceType ?? "",
+            State: {
+              Name: instance.State?.Name ?? ""
+            }
+          }));
+        setInstances(transformedData);
+      }
+    } catch (error) {
+      console.error("Error fetching instances:", error);
+    }
+  }
+
+  useEffect(() => {
     fetchInstances();
   }, []);
 
   function confirmDelete() {
-    setSelectedInstances([]);
     setIsDeleteModalVisible(false);
   }
-
-  // Mock data
-  const mockInstances: EC2Instance[] = [
-    { InstanceId: "i-1234567890abcdef0", InstanceType: "t2.micro", State: { Name: "running" } },
-    { InstanceId: "i-0987654321abcdef0", InstanceType: "t2.medium", State: { Name: "stopped" } }
-  ];
 
   return (
     <>
@@ -88,7 +82,7 @@ export function EC2InstanceList() {
                   cell: (item: EC2Instance) => item.State.Name,
                 },
               ]}
-              items={instances.length > 0 ? instances : mockInstances} 
+              items={instances.length > 0 ? instances : []}
               selectedItems={selectedInstances}
               onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
               pagination={
@@ -99,16 +93,10 @@ export function EC2InstanceList() {
                 />
               }
               empty={
-                <Box
-                  margin={{ vertical: "xs" }}
-                  textAlign="center"
-                  color="inherit"
-                >
+                <Box margin={{ vertical: "xs" }} textAlign="center" color="inherit">
                   <SpaceBetween size="m">
                     <b>No EC2 Instances</b>
-                    <Button onClick={() => {}}>
-                      Create Instance
-                    </Button>
+                    <Button onClick={() => {}}>Create Instance</Button>
                   </SpaceBetween>
                 </Box>
               }
@@ -129,11 +117,8 @@ export function EC2InstanceList() {
                       >
                         Delete
                       </Button>
-                      <Button
-                        variant="primary"
-                        onClick={() => {}}
-                      >
-                        Run Scan
+                      <Button variant="primary" onClick={() => {}}>
+                        Run
                       </Button>
                     </SpaceBetween>
                   }
@@ -153,10 +138,7 @@ export function EC2InstanceList() {
         footer={
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
-              <Button
-                variant="link"
-                onClick={() => setIsDeleteModalVisible(false)}
-              >
+              <Button variant="link" onClick={() => setIsDeleteModalVisible(false)}>
                 Cancel
               </Button>
               <Button variant="primary" onClick={confirmDelete}>
