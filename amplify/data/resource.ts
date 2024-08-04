@@ -5,7 +5,8 @@ const schema = a.schema({
   State: a
     .model({
       Name: a.string(),
-    }),
+    })
+    .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
   Instance: a
     .model({
       InstanceId: a.string(),
