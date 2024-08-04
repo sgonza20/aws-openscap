@@ -15,13 +15,13 @@ cfnUserPool.adminCreateUserConfig = {
   allowAdminCreateUserOnly: true,
 };
 
-const createDescribeInstancesPolicyStatement = new iam.PolicyStatement({
-  sid: "CreateQuarantinedAccessKeys",
+const ssmPolicy = new iam.PolicyStatement({
+  sid: "SSM",
   effect: iam.Effect.ALLOW,
-  actions: ["ec2:DescribeInstances"],
+  actions: ["ssm:DescribeInstanceInformation"],
   resources: ["*"],
 });
 
 const fetchInstances = backend.describeInstances.resources.lambda;
 
-fetchInstances.addToRolePolicy(createDescribeInstancesPolicyStatement);
+fetchInstances.addToRolePolicy(ssmPolicy);
