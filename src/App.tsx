@@ -5,51 +5,42 @@ import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, 
 
 const client = generateClient<Schema>();
 
-type Instance = {
+type EC2Instance = {
   InstanceId: string;
   InstanceType: string;
   State: { Name: string };
 };
 
 function EC2InstanceList() {
-  const [instances, setInstances] = useState<Instance[]>([]);
-  const [selectedInstances, setSelectedInstances] = useState<Instance[]>([]);
+  const [instances, setInstances] = useState<EC2Instance[]>([]);
+  const [selectedInstances, setSelectedInstances] = useState<EC2Instance[]>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
 
-async function fetchInstances() {
-  try {
-    const { data, errors } = await client.queries.GetInstances();
-    if (errors) {
-      console.error("Error fetching instances:", errors);
-      return;
+  async function fetchInstances() {
+    try {
+      const { data, errors } = await client.queries.GetInstances();
+      if (errors) {
+        console.error("Error fetching instances:", errors);
+        return;
+      }
+
+      if (data) {
+        const transformedData: EC2Instance[] = data
+          .filter((Instance): Instance is NonNullable<typeof Instance> => Instance !== null && Instance !== undefined)
+          .map(Instance => ({
+            InstanceId: Instance.InstanceId ?? "",
+            InstanceType: Instance.InstanceType ?? "",
+            State: {
+              Name: (Instance.State as { Name: string } | undefined)?.Name ?? ""
+            }
+          }));
+        setInstances(transformedData);
+      }
+    } catch (error) {
+      console.error("Error fetching instances:", error);
     }
-
-    if (data) {
-      // Type assertion to ensure data is treated as RawInstance[]
-      const instancesData: Instance[] = data as Instance[];
-
-      // Log data for debugging
-      console.log("Raw data fetched:", instancesData);
-
-      // Transform data to match the EC2Instance type
-      const transformedData: Instance[] = instancesData
-        .filter((instance: Instance | null | undefined): instance is Instance => instance !== null && instance !== undefined)
-        .map((instance: Instance) => ({
-          InstanceId: instance.InstanceId ?? "",
-          InstanceType: instance.InstanceType ?? "",
-          State: {
-            Name: instance.State?.Name ?? ""
-          }
-        }));
-        
-      setInstances(transformedData);
-    }
-  } catch (error) {
-    console.error("Error fetching instances:", error);
   }
-}
-
 
   useEffect(() => {
     fetchInstances();
@@ -74,6 +65,7 @@ async function fetchInstances() {
           <ContentLayout>
             <SpaceBetween size="m" direction="horizontal">
               <Button onClick={fetchInstances} variant="primary">
+                Refresh
               </Button>
             </SpaceBetween>
             <Table
@@ -81,18 +73,18 @@ async function fetchInstances() {
                 {
                   id: "instanceId",
                   header: "Instance ID",
-                  cell: (item: Instance) => item.InstanceId,
+                  cell: (item: EC2Instance) => item.InstanceId,
                   isRowHeader: true,
                 },
                 {
                   id: "instanceType",
                   header: "Instance Type",
-                  cell: (item: Instance) => item.InstanceType,
+                  cell: (item: EC2Instance) => item.InstanceType,
                 },
                 {
                   id: "state",
                   header: "State",
-                  cell: (item: Instance) => item.State.Name,
+                  cell: (item: EC2Instance) => item.State.Name,
                 },
               ]}
               items={instances.length > 0 ? instances : []}
