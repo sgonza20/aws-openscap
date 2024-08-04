@@ -11,42 +11,45 @@ type Instance = {
   State: { Name: string };
 };
 
-function App() {
+function EC2InstanceList() {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [selectedInstances, setSelectedInstances] = useState<Instance[]>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
 
-  async function fetchInstances() {
-    try {
-      const { data, errors } = await client.queries.GetInstances();
-      if (errors) {
-        console.error("Error fetching instances:", errors);
-        return;
-      }
-  
-      if (data) {
-        const instancesData: Instance[] = data as Instance[];
-  
-        console.log("Raw data fetched:", instancesData);
-  
-        const transformedData: Instance[] = instancesData
-          .filter((instance: Instance | null | undefined): instance is Instance => instance !== null && instance !== undefined)
-          .map((instance: Instance) => ({
-            InstanceId: instance.InstanceId ?? "",
-            InstanceType: instance.InstanceType ?? "",
-            State: {
-              Name: instance.State?.Name ?? ""
-            }
-          }));
-          
-        setInstances(transformedData);
-      }
-    } catch (error) {
-      console.error("Error fetching instances:", error);
+async function fetchInstances() {
+  try {
+    const { data, errors } = await client.queries.GetInstances();
+    if (errors) {
+      console.error("Error fetching instances:", errors);
+      return;
     }
+
+    if (data) {
+      // Type assertion to ensure data is treated as RawInstance[]
+      const instancesData: Instance[] = data as Instance[];
+
+      // Log data for debugging
+      console.log("Raw data fetched:", instancesData);
+
+      // Transform data to match the EC2Instance type
+      const transformedData: Instance[] = instancesData
+        .filter((instance: Instance | null | undefined): instance is Instance => instance !== null && instance !== undefined)
+        .map((instance: Instance) => ({
+          InstanceId: instance.InstanceId ?? "",
+          InstanceType: instance.InstanceType ?? "",
+          State: {
+            Name: instance.State?.Name ?? ""
+          }
+        }));
+        
+      setInstances(transformedData);
+    }
+  } catch (error) {
+    console.error("Error fetching instances:", error);
   }
-  
+}
+
 
   useEffect(() => {
     fetchInstances();
@@ -164,4 +167,4 @@ function App() {
   );
 }
 
-export default App;
+export default EC2InstanceList;
