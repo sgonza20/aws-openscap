@@ -74,12 +74,12 @@ function EC2InstanceList() {
                 },
                 {
                   id: "platformType",
-                  header: "Instance Type",
+                  header: "Platform Type",
                   cell: (item) => item.PlatformType,
                 },
                 {
                   id: "platformName",
-                  header: "State",
+                  header: "Platform Name",
                   cell: (item) => item.PlatformName,
                 },
               ]}
