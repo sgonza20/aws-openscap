@@ -3,7 +3,7 @@ import { describeInstances } from '../functions/describe-instances/resource';
 
 const schema = a.schema({
   State: a.enum(["running", "stopped", "pending"]),
-  Instance1: a
+  Instance: a
     .model({
       InstanceId: a.string(),
       InstanceType: a.string(),
