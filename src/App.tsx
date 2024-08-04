@@ -33,7 +33,6 @@ function EC2InstanceList() {
             InstanceType: instance.InstanceType ?? "",
             State: {
               Name: (instance.State as { Name: string } | undefined)?.Name ?? ""
-
             }
           }));
         setInstances(transformedData);
@@ -64,6 +63,11 @@ function EC2InstanceList() {
         }
         content={
           <ContentLayout>
+            <SpaceBetween size="m" direction="horizontal">
+              <Button onClick={fetchInstances} variant="primary">
+                Refresh
+              </Button>
+            </SpaceBetween>
             <Table
               columnDefinitions={[
                 {
