@@ -11,6 +11,14 @@ function EC2InstanceList() {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  // const [isInvoking, setIsInvoking] = useState(false);
+
+  useEffect(() => {
+    fetchInstances();
+    client.models.Instance.observeQuery().subscribe({
+      next: (data) =>setInstances([...data.items])
+    })
+  }, []);
 
   async function fetchInstances() {
     setIsLoading(true);
@@ -41,12 +49,26 @@ function EC2InstanceList() {
     }
   }
 
-  useEffect(() => {
-    fetchInstances();
-    client.models.Instance.observeQuery().subscribe({
-      next: (data) =>setInstances([...data.items])
-    })
-  }, []);
+  async function InvokeScan(InstanceID: string, DocumentName: string) {
+    const { data, errors } = await client.queries.InvokeSSM({
+      InstanceId: InstanceID,
+      DocumentName: DocumentName,
+    });
+    console.log(data, errors);
+    if (data?.statusCode == 200) {
+      client.models.Instance.update({
+        InstanceId: InstanceID,
+      })
+    }
+  }
+
+  function confirmScan() {
+    selectedInstances.forEach((item) =>
+      InvokeScan(item.InstanceId, "OpenSCAPDocument")
+    );
+    setSelectedInstances([]);
+    setIsDeleteModalVisible(false);
+  }
 
   function confirmDelete() {
     setIsDeleteModalVisible(false);
@@ -122,7 +144,7 @@ function EC2InstanceList() {
                       >
                         Delete
                       </Button>
-                      <Button variant="primary" onClick={() => {}}>
+                      <Button variant="primary" onClick={confirmScan}>
                         Run
                       </Button>
                     </SpaceBetween>

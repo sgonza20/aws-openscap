@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { describeInstances } from '../functions/describe-instances/resource';
+import { invokeSSM } from '../functions/invoke-ssm/resource';
 
 const schema = a.schema({
   State: a.enum(["running", "stopped", "pending"]),
@@ -16,10 +17,23 @@ const schema = a.schema({
     PlatformType: a.string(),
     PlatformName: a.string(),
   }),
+  HttpResponse: a.customType({
+    statusCode: a.integer(),
+    body: a.string(),
+  }),
   GetInstances: a
     .query()
     .returns(a.ref("InstanceInformation").array())
     .handler(a.handler.function(describeInstances))
+    .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
+  InvokeSSM: a
+    .query()
+    .arguments({
+      InstanceId: a.string(),
+      DocumentName: a.string(),
+    })
+    .returns(a.ref("HttpResponse"))
+    .handler(a.handler.function(invokeSSM))
     .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
 });
 
