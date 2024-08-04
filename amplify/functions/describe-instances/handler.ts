@@ -21,7 +21,6 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
         const command = new DescribeInstancesCommand({});
         const data: DescribeInstancesCommandOutput = await ec2Client.send(command);
 
-        // Format the instances data
         const instances: EC2Instance[] = (data.Reservations ?? [])
             .flatMap((reservation: Reservation) =>
                 (reservation.Instances ?? []).map(instance => ({
@@ -38,16 +37,19 @@ export const fetchInstances = async (): Promise<EC2Instance[]> => {
         throw new Error("Failed to fetch instances");
     }
 };
-
-// ES module export for Lambda handler
 export const handler = async (event: any) => {
     try {
         const instances = await fetchInstances();
+
+        console.log("Fetched EC2 Instances:", JSON.stringify(instances, null, 2));
+
         return {
             statusCode: 200,
             body: JSON.stringify(instances),
         };
     } catch (error) {
+        console.error("Error handling request:", error);
+
         return {
             statusCode: 500,
             body: JSON.stringify({ message: (error as Error).message }),
