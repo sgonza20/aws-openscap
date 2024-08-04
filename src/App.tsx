@@ -5,15 +5,15 @@ import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, 
 
 const client = generateClient<Schema>();
 
-type EC2Instance = {
-  InstanceId: string;
-  InstanceType: string;
-  State: { Name: string };
-};
+// type EC2Instance = {
+//   InstanceId: string;
+//   InstanceType: string;
+//   State: { Name: string };
+// };
 
 function EC2InstanceList() {
-  const [instances, setInstances] = useState<EC2Instance[]>([]);
-  const [selectedInstances, setSelectedInstances] = useState<EC2Instance[]>([]);
+  const [instances, setInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
+  const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
 
@@ -26,16 +26,15 @@ function EC2InstanceList() {
       }
 
       if (data) {
-        const transformedData: EC2Instance[] = data
-          .filter((Instance): Instance is NonNullable<typeof Instance> => Instance !== null && Instance !== undefined)
-          .map(Instance => ({
-            InstanceId: Instance.InstanceId ?? "",
-            InstanceType: Instance.InstanceType ?? "",
-            State: {
-              Name: (Instance.State as { Name: string } | undefined)?.Name ?? ""
-            }
-          }));
-        setInstances(transformedData);
+        data.forEach(async (instance) => {
+          // TODO: Probably need to check if it's already in there and update instead of create
+          await client.models.Instance.create({
+            InstanceId: "string",
+            InstanceType: "string",
+            State: "string",
+          });
+          setInstances([...instances, instance!]);
+        })
       }
     } catch (error) {
       console.error("Error fetching instances:", error);
@@ -73,18 +72,18 @@ function EC2InstanceList() {
                 {
                   id: "instanceId",
                   header: "Instance ID",
-                  cell: (item: EC2Instance) => item.InstanceId,
+                  cell: (item) => item.InstanceId,
                   isRowHeader: true,
                 },
                 {
                   id: "instanceType",
                   header: "Instance Type",
-                  cell: (item: EC2Instance) => item.InstanceType,
+                  cell: (item) => item.InstanceType,
                 },
                 {
                   id: "state",
                   header: "State",
-                  cell: (item: EC2Instance) => item.State.Name,
+                  cell: (item) => item.State,
                 },
               ]}
               items={instances.length > 0 ? instances : []}
