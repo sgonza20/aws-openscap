@@ -11,13 +11,13 @@ function EC2InstanceList() {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  // const [isInvoking, setIsInvoking] = useState(false);
 
   useEffect(() => {
     fetchInstances();
-    client.models.Instance.observeQuery().subscribe({
-      next: (data) =>setInstances([...data.items])
-    })
+    const subscription = client.models.Instance.observeQuery().subscribe({
+      next: (data) => setInstances([...data.items]),
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function fetchInstances() {
@@ -34,13 +34,12 @@ function EC2InstanceList() {
 
       if (data) {
         data.forEach(async (instance) => {
-          // TODO: Probably need to check if it's already in there and update instead of create
           await client.models.Instance.create({
             InstanceId: instance?.InstanceId!,
             PlatformName: instance?.PlatformName,
             PlatformType: instance?.PlatformType,
           });
-        })
+        });
       }
     } catch (error) {
       console.error("Error fetching instances:", error);
@@ -49,16 +48,23 @@ function EC2InstanceList() {
     }
   }
 
-  async function InvokeScan(InstanceID: string, DocumentName: string) {
-    const { data, errors } = await client.queries.InvokeSSM({
-      InstanceId: InstanceID,
-      DocumentName: DocumentName,
-    });
-    console.log(data, errors);
-    if (data?.statusCode == 200) {
-      client.models.Instance.update({
-        InstanceId: InstanceID,
-      })
+  async function InvokeScan(InstanceId: string, DocumentName: string) {
+    try {
+      const { data, errors } = await client.queries.InvokeSSM({
+        InstanceId,
+        DocumentName,
+      });
+      console.log("SSM Invoke data:", data);
+      if (errors) {
+        console.error("SSM Invoke errors:", errors);
+      }
+      if (data?.statusCode == 200) {
+        await client.models.Instance.update({
+          InstanceId,
+        });
+      }
+    } catch (error) {
+      console.error("Error invoking SSM document:", error);
     }
   }
 
@@ -129,14 +135,13 @@ function EC2InstanceList() {
               stickyHeader={true}
               resizableColumns={true}
               loadingText="Loading instances"
-              // trackBy="InstanceId"
               header={
                 <Header
                   variant="h1"
                   actions={
                     <SpaceBetween size="xs" direction="horizontal">
                       <Button onClick={fetchInstances} variant="primary">
-                      {isLoading ? <Spinner /> : "Refresh"}
+                        {isLoading ? <Spinner /> : "Refresh"}
                       </Button>
                       <Button
                         onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
@@ -144,7 +149,7 @@ function EC2InstanceList() {
                       >
                         Delete
                       </Button>
-                      <Button variant="primary" onClick={confirmScan}>
+                      <Button variant="primary" onClick={confirmScan} disabled={selectedInstances.length === 0}>
                         Run
                       </Button>
                     </SpaceBetween>
