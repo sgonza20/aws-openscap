@@ -14,6 +14,7 @@ import {
         return {
           statusCode: 400,
           body: "Missing InstanceID",
+          event: event,
         };
       }
       if (!event.arguments.documentName) {
