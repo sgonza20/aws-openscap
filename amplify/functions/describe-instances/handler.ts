@@ -1,59 +1,56 @@
-import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandOutput } from '@aws-sdk/client-ec2';
+import {
+  SSMClient,
+  DescribeInstanceInformationCommand,
+  DescribeInstanceInformationCommandOutput,
+  InstanceInformation,
+} from "@aws-sdk/client-ssm";
+import type { Schema } from "../../data/resource";
 
-const ec2Client = new EC2Client({ region: "us-east-2" });
+const ssmClient = new SSMClient();
 
-interface EC2Instance {
-    InstanceId: string;
-    InstanceType: string;
-    State: { Name: string };
-}
+export const fetchInstances = async () => {
+  try {
+    let allInstances = new Array<InstanceInformation>();
+    let nextToken = undefined;
 
-interface Reservation {
-    Instances?: Array<{
-        InstanceId?: string;
-        InstanceType?: string;
-        State?: { Name?: string };
-    }>;
-}
+    do {
+      const command = new DescribeInstanceInformationCommand({
+        NextToken: nextToken,
+      });
 
-export const fetchInstances = async (): Promise<{ List: EC2Instance[] }> => {
-    try {
-        const command = new DescribeInstancesCommand({});
-        const data: DescribeInstancesCommandOutput = await ec2Client.send(command);
+      const data: DescribeInstanceInformationCommandOutput =
+        await ssmClient.send(command);
 
-        const instances: EC2Instance[] = (data.Reservations ?? [])
-            .flatMap((reservation: Reservation) =>
-                (reservation.Instances ?? []).map(instance => ({
-                    InstanceId: instance.InstanceId ?? "",
-                    InstanceType: instance.InstanceType ?? "",
-                    State: { Name: instance.State?.Name ?? "" },
-                }))
-            )
-            .filter(instance => instance.InstanceId !== "");
+      if (data.InstanceInformationList) {
+        allInstances = allInstances.concat(data.InstanceInformationList);
+      }
 
-        return { List: instances };
-    } catch (error) {
-        console.error("Error fetching instances:", error);
-        throw new Error("Failed to fetch instances");
-    }
+      nextToken = data.NextToken;
+    } while (nextToken);
+
+    return allInstances.map(
+      (instance) =>
+        ({
+          InstanceId: instance.InstanceId,
+          PlatformName: instance.PlatformName,
+          PlatformType: instance.PlatformType,
+        } as Schema["Instance"]["type"])
+    );
+  } catch (error) {
+    console.error("Error fetching instances:", error);
+    throw new Error("Failed to fetch instances");
+  }
 };
 
-export const handler = async (event: any) => {
-    try {
-        const { List } = await fetchInstances();
-
-        console.log("Fetched EC2 Instances:", List);
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ List }),
-        };
-    } catch (error) {
-        console.error("Error handling request:", error);
-
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: (error as Error).message }),
-        };
-    }
+export const handler: Schema["GetInstances"]["functionHandler"] = async (
+  event: any
+) => {
+  try {
+    const instances = await fetchInstances();
+    console.log("Fetched EC2 Instances:", instances);
+    return instances;
+  } catch (error) {
+    console.error("Error handling request:", error);
+    return undefined;
+  }
 };

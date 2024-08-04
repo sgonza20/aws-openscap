@@ -5,37 +5,32 @@ import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, 
 
 const client = generateClient<Schema>();
 
-type EC2Instance = {
-  InstanceId: string;
-  InstanceType: string;
-  State: { Name: string };
-};
-
 function EC2InstanceList() {
-  const [instances, setInstances] = useState<EC2Instance[]>([]);
-  const [selectedInstances, setSelectedInstances] = useState<EC2Instance[]>([]);
+  const [instances, setInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
+  const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
 
   async function fetchInstances() {
     try {
       const { data, errors } = await client.queries.GetInstances();
+
+      console.log("Instances found:", data);
+
       if (errors) {
         console.error("Error fetching instances:", errors);
         return;
       }
 
       if (data) {
-        const transformedData: EC2Instance[] = data
-          .filter((Instance): Instance is NonNullable<typeof Instance> => Instance !== null && Instance !== undefined)
-          .map(Instance => ({
-            InstanceId: Instance.InstanceId ?? "",
-            InstanceType: Instance.InstanceType ?? "",
-            State: {
-              Name: (Instance.State as { Name: string } | undefined)?.Name ?? ""
-            }
-          }));
-        setInstances(transformedData);
+        data.forEach(async (instance) => {
+          // TODO: Probably need to check if it's already in there and update instead of create
+          await client.models.Instance.create({
+            InstanceId: instance?.InstanceId!,
+            PlatformName: instance?.PlatformName,
+            PlatformType: instance?.PlatformType,
+          });
+        })
       }
     } catch (error) {
       console.error("Error fetching instances:", error);
@@ -44,6 +39,9 @@ function EC2InstanceList() {
 
   useEffect(() => {
     fetchInstances();
+    client.models.Instance.observeQuery().subscribe({
+      next: (data) =>setInstances([...data.items])
+    })
   }, []);
 
   function confirmDelete() {
@@ -63,31 +61,26 @@ function EC2InstanceList() {
         }
         content={
           <ContentLayout>
-            <SpaceBetween size="m" direction="horizontal">
-              <Button onClick={fetchInstances} variant="primary">
-                Refresh
-              </Button>
-            </SpaceBetween>
             <Table
               columnDefinitions={[
                 {
                   id: "instanceId",
                   header: "Instance ID",
-                  cell: (item: EC2Instance) => item.InstanceId,
+                  cell: (item) => item.InstanceId,
                   isRowHeader: true,
                 },
                 {
-                  id: "instanceType",
-                  header: "Instance Type",
-                  cell: (item: EC2Instance) => item.InstanceType,
+                  id: "platformType",
+                  header: "Platform Type",
+                  cell: (item) => item.PlatformType || undefined,
                 },
                 {
-                  id: "state",
-                  header: "State",
-                  cell: (item: EC2Instance) => item.State.Name,
+                  id: "platformName",
+                  header: "Platform Name",
+                  cell: (item) => item.PlatformName || undefined,
                 },
               ]}
-              items={instances.length > 0 ? instances : []}
+              items={instances}
               selectedItems={selectedInstances}
               onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
               pagination={
@@ -110,12 +103,15 @@ function EC2InstanceList() {
               stickyHeader={true}
               resizableColumns={true}
               loadingText="Loading instances"
-              trackBy="InstanceId"
+              // trackBy="InstanceId"
               header={
                 <Header
                   variant="h1"
                   actions={
                     <SpaceBetween size="xs" direction="horizontal">
+                      <Button onClick={fetchInstances} variant="primary">
+                        Refresh
+                      </Button>
                       <Button
                         onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
                         disabled={selectedInstances.length === 0}

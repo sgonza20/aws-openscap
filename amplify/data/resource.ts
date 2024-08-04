@@ -5,14 +5,20 @@ const schema = a.schema({
   State: a.enum(["running", "stopped", "pending"]),
   Instance: a
     .model({
-      InstanceId: a.string(),
-      InstanceType: a.string(),
-      State: a.string(),
+      InstanceId: a.string().required(),
+      PlatformType: a.string(),
+      PlatformName: a.string(),
     })
+    .identifier(["InstanceId"])
     .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
+  InstanceInformation: a.customType({
+    InstanceId: a.string(),
+    PlatformType: a.string(),
+    PlatformName: a.string(),
+  }),
   GetInstances: a
     .query()
-    .returns(a.ref("Instance").array())
+    .returns(a.ref("InstanceInformation").array())
     .handler(a.handler.function(describeInstances))
     .authorization((allow) => [allow.publicApiKey(), allow.authenticated()]),
 });
