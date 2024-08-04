@@ -5,12 +5,6 @@ import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, 
 
 const client = generateClient<Schema>();
 
-// type EC2Instance = {
-//   InstanceId: string;
-//   InstanceType: string;
-//   State: { Name: string };
-// };
-
 function EC2InstanceList() {
   const [instances, setInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
@@ -31,12 +25,12 @@ function EC2InstanceList() {
       if (data) {
         data.forEach(async (instance) => {
           // TODO: Probably need to check if it's already in there and update instead of create
-          await client.models.Instance.create({
-            InstanceId: "string",
-            InstanceType: "string",
-            State: "string",
+          const response = await client.models.Instance.create({
+            InstanceId: instance?.InstanceId!,
+            PlatformName: instance?.PlatformName,
+            PlatformType: instance?.PlatformType,
           });
-          setInstances([...instances, instance!]);
+          setInstances([...instances, response.data!]);
         })
       }
     } catch (error) {
@@ -79,14 +73,14 @@ function EC2InstanceList() {
                   isRowHeader: true,
                 },
                 {
-                  id: "instanceType",
+                  id: "platformType",
                   header: "Instance Type",
-                  cell: (item) => item.InstanceType,
+                  cell: (item) => item.PlatformType,
                 },
                 {
-                  id: "state",
+                  id: "platformName",
                   header: "State",
-                  cell: (item) => item.State,
+                  cell: (item) => item.PlatformName,
                 },
               ]}
               items={instances.length > 0 ? instances : []}
