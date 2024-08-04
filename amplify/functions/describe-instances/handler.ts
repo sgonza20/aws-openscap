@@ -39,7 +39,7 @@ export const handler = async (event: any) => {
     const instances = await fetchInstances();
     console.log("Fetched EC2 Instances:", instances);
 
-    return { instances };
+    return instances;
 
   } catch (error) {
     console.error("Error handling request:", error);
