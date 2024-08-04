@@ -25,12 +25,11 @@ function EC2InstanceList() {
       if (data) {
         data.forEach(async (instance) => {
           // TODO: Probably need to check if it's already in there and update instead of create
-          const response = await client.models.Instance.create({
+          await client.models.Instance.create({
             InstanceId: instance?.InstanceId!,
             PlatformName: instance?.PlatformName,
             PlatformType: instance?.PlatformType,
           });
-          setInstances([...instances, response.data!]);
         })
       }
     } catch (error) {
@@ -40,6 +39,9 @@ function EC2InstanceList() {
 
   useEffect(() => {
     fetchInstances();
+    client.models.Instance.observeQuery().subscribe({
+      next: (data) =>setInstances([...data.items])
+    })
   }, []);
 
   function confirmDelete() {
@@ -70,15 +72,15 @@ function EC2InstanceList() {
                 {
                   id: "platformType",
                   header: "Platform Type",
-                  cell: (item) => item.PlatformType,
+                  cell: (item) => item.PlatformType || undefined,
                 },
                 {
                   id: "platformName",
                   header: "Platform Name",
-                  cell: (item) => item.PlatformName,
+                  cell: (item) => item.PlatformName || undefined,
                 },
               ]}
-              items={instances.length > 0 ? instances : []}
+              items={instances}
               selectedItems={selectedInstances}
               onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
               pagination={
@@ -101,7 +103,7 @@ function EC2InstanceList() {
               stickyHeader={true}
               resizableColumns={true}
               loadingText="Loading instances"
-              trackBy="InstanceId"
+              // trackBy="InstanceId"
               header={
                 <Header
                   variant="h1"
