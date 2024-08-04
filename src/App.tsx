@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
-import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, SpaceBetween, Pagination, Modal } from "@cloudscape-design/components";
+import { AppLayout, Box, BreadcrumbGroup, Button, ContentLayout, Header, Table, SpaceBetween, Pagination, Modal, Spinner } from "@cloudscape-design/components";
 
 const client = generateClient<Schema>();
 
@@ -10,8 +10,10 @@ function EC2InstanceList() {
   const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
   async function fetchInstances() {
+    setIsLoading(true);
     try {
       const { data, errors } = await client.queries.GetInstances();
 
@@ -34,6 +36,8 @@ function EC2InstanceList() {
       }
     } catch (error) {
       console.error("Error fetching instances:", error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -110,7 +114,7 @@ function EC2InstanceList() {
                   actions={
                     <SpaceBetween size="xs" direction="horizontal">
                       <Button onClick={fetchInstances} variant="primary">
-                        Refresh
+                      {isLoading ? <Spinner /> : "Refresh"}
                       </Button>
                       <Button
                         onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
