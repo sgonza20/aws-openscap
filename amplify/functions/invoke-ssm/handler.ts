@@ -25,7 +25,7 @@ import {
       console.log("Invoking SSM document with arguments:", event.arguments);
       try {
         const command = new SendCommandCommand({
-          InstanceIds: event.arguments.InstanceId,
+          InstanceIds: [event.arguments.InstanceId],
           DocumentName: event.arguments.DocumentName,
         });
     
