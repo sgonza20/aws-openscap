@@ -20,7 +20,7 @@ import {
 
 const client = generateClient<Schema>();
 
-function EC2InstanceList() {
+function App() {
   const [instances, setInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
@@ -96,143 +96,155 @@ function EC2InstanceList() {
   return (
     <Authenticator hideSignUp>
       {({ signOut, user }) => (
-        <div>
-          <TopNavigation
-            identity={{
-              href: "#",
-              title: "AWS ICE",
-            }}
-            utilities={[
-              {
-                type: "button",
-                text: user?.signInDetails?.loginId,
-                iconName: "user-profile",
-              },
-              {
-                type: "button",
-                text: "Sign out",
-                onClick: () => signOut!(),
-              },
-            ]}
-          />
-          <AppLayout
-            breadcrumbs={
-              <BreadcrumbGroup
-                items={[
-                  { text: "Home", href: "#" },
-                  { text: "EC2 Instances", href: "#" },
-                ]}
-              />
-            }
-            content={
-              <ContentLayout>
-                <Table
-                  columnDefinitions={[
-                    {
-                      id: "instanceId",
-                      header: "Instance ID",
-                      cell: (item) => item.InstanceId,
-                      isRowHeader: true,
-                    },
-                    {
-                      id: "platformType",
-                      header: "Platform Type",
-                      cell: (item) => item.PlatformType || undefined,
-                    },
-                    {
-                      id: "platformName",
-                      header: "Platform Name",
-                      cell: (item) => item.PlatformName || undefined,
-                    },
-                    {
-                      id: "lastScanTime",
-                      header: "Last Scan Time",
-                      cell: (item) => item.LastScanTime ? new Date(item.LastScanTime).toLocaleString() : 'N/A',
-                    },
-                    {
-                      id: "scanStatus",
-                      header: "Scan Status",
-                      cell: (item) => (
-                        <StatusIndicator type={item.ScanStatus === 'Success' ? 'success' : item.ScanStatus === 'Failed' ? 'error' : 'info'}>
-                          {item.ScanStatus || 'N/A'}
-                        </StatusIndicator>
-                      ),
-                    },
+        <>
+          <style>
+            {`
+              html, body, #root {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+              }
+            `}
+          </style>
+          <div>
+            <TopNavigation
+              identity={{
+                href: "#",
+                title: "AWS ICE",
+              }}
+              utilities={[
+                {
+                  type: "button",
+                  text: user?.signInDetails?.loginId,
+                  iconName: "user-profile",
+                },
+                {
+                  type: "button",
+                  text: "Sign out",
+                  onClick: () => signOut!(),
+                },
+              ]}
+            />
+            <AppLayout
+              breadcrumbs={
+                <BreadcrumbGroup
+                  items={[
+                    { text: "Home", href: "#" },
+                    { text: "EC2 Instances", href: "#" },
                   ]}
-                  items={instances}
-                  selectedItems={selectedInstances}
-                  onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
-                  pagination={
-                    <Pagination
-                      currentPageIndex={currentPageIndex}
-                      onChange={({ detail }) => setCurrentPageIndex(detail.currentPageIndex)}
-                      pagesCount={Math.ceil(instances.length / 10)}
-                    />
-                  }
-                  empty={
-                    <Box margin={{ vertical: "xs" }} textAlign="center" color="inherit">
-                      <SpaceBetween size="m">
-                        <b>No EC2 Instances</b>
-                        <Button onClick={() => {}}>Create Instance</Button>
-                      </SpaceBetween>
-                    </Box>
-                  }
-                  selectionType="multi"
-                  variant="full-page"
-                  stickyHeader={true}
-                  resizableColumns={true}
-                  loadingText="Loading instances"
-                  header={
-                    <Header
-                      variant="h1"
-                      actions={
-                        <SpaceBetween size="xs" direction="horizontal">
-                          <Button onClick={fetchInstances} variant="primary">
-                            {isLoading ? <Spinner /> : "Refresh"}
-                          </Button>
-                          <Button
-                            onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
-                            disabled={selectedInstances.length === 0}
-                          >
-                            Delete
-                          </Button>
-                          <Button variant="primary" onClick={confirmScan}>
-                            Run
-                          </Button>
-                        </SpaceBetween>
-                      }
-                    >
-                      EC2 Instances ({instances.length})
-                    </Header>
-                  }
                 />
-              </ContentLayout>
-            }
-          />
-          <Modal
-            onDismiss={() => setIsDeleteModalVisible(false)}
-            visible={isDeleteModalVisible}
-            closeAriaLabel="Close"
-            header="Confirm Deletion"
-            footer={
-              <Box float="right">
-                <SpaceBetween direction="horizontal" size="xs">
-                  <Button variant="link" onClick={() => setIsDeleteModalVisible(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="primary" onClick={confirmDelete}>
-                    Delete
-                  </Button>
-                </SpaceBetween>
-              </Box>
-            }
-          >
-            Are you sure you want to delete the selected instances? This action cannot be undone.
-          </Modal>
-        </div>
+              }
+              content={
+                <ContentLayout>
+                  <Table
+                    columnDefinitions={[
+                      {
+                        id: "instanceId",
+                        header: "Instance ID",
+                        cell: (item) => item.InstanceId,
+                        isRowHeader: true,
+                      },
+                      {
+                        id: "platformType",
+                        header: "Platform Type",
+                        cell: (item) => item.PlatformType || undefined,
+                      },
+                      {
+                        id: "platformName",
+                        header: "Platform Name",
+                        cell: (item) => item.PlatformName || undefined,
+                      },
+                      {
+                        id: "lastScanTime",
+                        header: "Last Scan Time",
+                        cell: (item) => item.LastScanTime ? new Date(item.LastScanTime).toLocaleString() : 'N/A',
+                      },
+                      {
+                        id: "scanStatus",
+                        header: "Scan Status",
+                        cell: (item) => (
+                          <StatusIndicator type={item.ScanStatus === 'Success' ? 'success' : item.ScanStatus === 'Failed' ? 'error' : 'info'}>
+                            {item.ScanStatus || 'N/A'}
+                          </StatusIndicator>
+                        ),
+                      },
+                    ]}
+                    items={instances}
+                    selectedItems={selectedInstances}
+                    onSelectionChange={({ detail }) => setSelectedInstances(detail.selectedItems)}
+                    pagination={
+                      <Pagination
+                        currentPageIndex={currentPageIndex}
+                        onChange={({ detail }) => setCurrentPageIndex(detail.currentPageIndex)}
+                        pagesCount={Math.ceil(instances.length / 10)}
+                      />
+                    }
+                    empty={
+                      <Box margin={{ vertical: "xs" }} textAlign="center" color="inherit">
+                        <SpaceBetween size="m">
+                          <b>No EC2 Instances</b>
+                          <Button onClick={() => {}}>Create Instance</Button>
+                        </SpaceBetween>
+                      </Box>
+                    }
+                    selectionType="multi"
+                    variant="full-page"
+                    stickyHeader={true}
+                    resizableColumns={true}
+                    loadingText="Loading instances"
+                    header={
+                      <Header
+                        variant="h1"
+                        actions={
+                          <SpaceBetween size="xs" direction="horizontal">
+                            <Button onClick={fetchInstances} variant="primary">
+                              {isLoading ? <Spinner /> : "Refresh"}
+                            </Button>
+                            <Button
+                              onClick={() => selectedInstances.length > 0 && setIsDeleteModalVisible(true)}
+                              disabled={selectedInstances.length === 0}
+                            >
+                              Delete
+                            </Button>
+                            <Button variant="primary" onClick={confirmScan}>
+                              Run
+                            </Button>
+                          </SpaceBetween>
+                        }
+                      >
+                        EC2 Instances ({instances.length})
+                      </Header>
+                    }
+                  />
+                </ContentLayout>
+              }
+            />
+            <Modal
+              onDismiss={() => setIsDeleteModalVisible(false)}
+              visible={isDeleteModalVisible}
+              closeAriaLabel="Close"
+              header="Confirm Deletion"
+              footer={
+                <Box float="right">
+                  <SpaceBetween direction="horizontal" size="xs">
+                    <Button variant="link" onClick={() => setIsDeleteModalVisible(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="primary" onClick={confirmDelete}>
+                      Delete
+                    </Button>
+                  </SpaceBetween>
+                </Box>
+              }
+            >
+              Are you sure you want to delete the selected instances? This action cannot be undone.
+            </Modal>
+          </div>
+        </>
       )}
     </Authenticator>
   );
 }
 
-export default EC2InstanceList;
+export default App;
