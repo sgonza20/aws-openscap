@@ -10,13 +10,13 @@ import {
   export const handler: Schema["InvokeSSM"]["functionHandler"] = async (
     event: any
   ) => {
-    if (!event.arguments.instanceId) {
+    if (!event.arguments.InstanceId) {
         return {
           statusCode: 400,
-          body: "Missing InstanceID" + JSON.stringify(event) + event.arguments,
+          body: "Missing InstanceID"
         };
       }
-      if (!event.arguments.documentName) {
+      if (!event.arguments.DocumentName) {
         return {
           statusCode: 400,
           body: "Missing Document Name",
@@ -25,8 +25,8 @@ import {
       console.log("Invoking SSM document with arguments:", event.arguments);
       try {
         const command = new SendCommandCommand({
-          InstanceIds: event.arguments.instanceId,
-          DocumentName: event.arguments.documentName,
+          InstanceIds: event.arguments.InstanceId,
+          DocumentName: event.arguments.DocumentName,
         });
     
         const data: SendCommandCommandOutput = await ssmClient.send(command);
