@@ -13,8 +13,7 @@ import {
     if (!event.arguments.instanceId) {
         return {
           statusCode: 400,
-          body: "Missing InstanceID",
-          event: JSON.stringify(event) + event.arguments,
+          body: "Missing InstanceID" + JSON.stringify(event) + event.arguments,
         };
       }
       if (!event.arguments.documentName) {
