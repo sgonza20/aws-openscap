@@ -10,36 +10,55 @@ import {
   export const handler: Schema["InvokeSSM"]["functionHandler"] = async (
     event: any
   ) => {
-    if (!event.arguments.InstanceId) {
-        return {
-          statusCode: 400,
-          body: "Missing InstanceID"
-        };
-      }
-      if (!event.arguments.DocumentName) {
-        return {
-          statusCode: 400,
-          body: "Missing Document Name",
-        };
-      }
-      console.log("Invoking SSM document with arguments:", event.arguments);
-      try {
-        const command = new SendCommandCommand({
-          InstanceIds: [event.arguments.InstanceId],
-          DocumentName: event.arguments.DocumentName,
-        });
-    
-        const data: SendCommandCommandOutput = await ssmClient.send(command);
-        return {
-            statusCode: 200,
-            body: "OpenSCAP Scan Started",
-        };
+    const { InstanceId, DocumentName, OS, Benchmark } = event.arguments;
+  
+    if (!InstanceId) {
+      return {
+        statusCode: 400,
+        body: "Missing InstanceID",
+      };
+    }
+    if (!DocumentName) {
+      return {
+        statusCode: 400,
+        body: "Missing Document Name",
+      };
+    }
+    if (!OS) {
+      return {
+        statusCode: 400,
+        body: "Missing OS",
+      };
+    }
+    if (!Benchmark) {
+      return {
+        statusCode: 400,
+        body: "Missing Benchmark",
+      };
+    }
+  
+    console.log("Invoking SSM document with arguments:", event.arguments);
+    try {
+      const command = new SendCommandCommand({
+        InstanceIds: [InstanceId],
+        DocumentName: DocumentName,
+        Parameters: {
+          OS: [OS],
+          Benchmark: [Benchmark],
+        },
+      });
+  
+      const data: SendCommandCommandOutput = await ssmClient.send(command);
+      return {
+        statusCode: 200,
+        body: "OpenSCAP Scan Started",
+      };
     } catch (error) {
-        console.error("Error invoking SSM document:", error);
-        return {
-            statusCode: 500,
-            body: "Failed to invoke SSM document",
+      console.error("Error invoking SSM document:", error);
+      return {
+        statusCode: 500,
+        body: "Failed to invoke SSM document",
         }
     }
-};
+  };
   
