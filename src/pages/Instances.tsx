@@ -108,7 +108,7 @@ export default function EC2Instances() {
           </SpaceBetween>
         }
       >
-        EC2 Instances ({instances.length})
+        Instances ({instances.length})
       </Header>
       <Table
         columnDefinitions={[

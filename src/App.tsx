@@ -6,6 +6,7 @@ import CustomSideNavigation from "./components/Navigation/SideNavigation";
 import Instances from "./pages/Instances";
 import Remediation from "./pages/Remediation";
 import Support from "./pages/Support";
+import Home from "./pages/Home";
 
 function App() {
   return (
@@ -27,9 +28,10 @@ function App() {
               navigation={<CustomSideNavigation />}
               content={
                 <Routes>
-                  <Route path="/" element={<Instances />} />
+                  <Route path="/" element={<Home />} />
                   <Route path="/remediation" element={<Remediation />} />
                   <Route path="/support" element={<Support />} />
+                  <Route path="/instances" element={<Instances />} />
                 </Routes>
               }
               toolsHide={true}

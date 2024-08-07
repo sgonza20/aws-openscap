@@ -9,7 +9,7 @@ export default function CustomSideNavigation() {
   return (
     <SideNavigation
       activeHref={activeHref}
-      header={{ href: "/", text: "Navigation" }}
+      header={{ href: "/", text: "Home" }}
       onFollow={(event) => {
         if (!event.detail.external) {
           event.preventDefault();
@@ -20,8 +20,13 @@ export default function CustomSideNavigation() {
       items={[
         {
           type: "link",
-          text: "EC2 Instances",
+          text: "Home",
           href: "/",
+        },
+        {
+          type: "link",
+          text: "Instances",
+          href: "/instances",
         },
         {
           type: "link",
