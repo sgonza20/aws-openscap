@@ -1,25 +1,36 @@
 import { useEffect, useState } from "react";
-import { 
-  Box, 
-  Button, 
-  ContentLayout, 
-  Header, 
-  Table, 
-  SpaceBetween, 
-  Pagination, 
-  Modal, 
-  Spinner, 
-  StatusIndicator 
+import {
+  Box,
+  Button,
+  ContentLayout,
+  Header,
+  Table,
+  SpaceBetween,
+  Pagination,
+  Modal,
+  Spinner,
+  StatusIndicator,
+  Form,
+  FormField,
+  Select
 } from "@cloudscape-design/components";
 import { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
+interface Option {
+  label: string;
+  value: string;
+}
+
 export default function EC2Instances() {
   const [instances, setInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [selectedInstances, setSelectedInstances] = useState<Array<Schema["Instance"]["type"]>>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isRunModalVisible, setIsRunModalVisible] = useState(false);
+  const [selectedOS, setSelectedOS] = useState<Option | null>(null);
+  const [selectedBenchmark, setSelectedBenchmark] = useState<Option | null>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -60,10 +71,12 @@ export default function EC2Instances() {
     }
   }
 
-  async function InvokeScan(InstanceID: string, DocumentName: string) {
+  async function InvokeScan(InstanceID: string, DocumentName: string, OS: string, Benchmark: string) {
     const { data, errors } = await client.queries.InvokeSSM({
       InstanceId: InstanceID,
       DocumentName: DocumentName,
+      OS: OS,
+      Benchmark: Benchmark
     });
     console.log(data, errors);
     if (data?.statusCode === 200) {
@@ -76,16 +89,25 @@ export default function EC2Instances() {
   }
 
   function confirmScan() {
-    selectedInstances.forEach((item) =>
-      InvokeScan(item.InstanceId, "OpenSCAPDocument")
-    );
-    console.log(selectedInstances);
-    setSelectedInstances([]);
+    if (selectedOS && selectedBenchmark) {
+      selectedInstances.forEach((item) =>
+        InvokeScan(item.InstanceId,"OpenSCAPDocument", selectedOS.value, selectedBenchmark.value)
+      );
+      console.log(selectedInstances);
+      setSelectedInstances([]);
+      setIsRunModalVisible(false);
+    } else {
+      // Handle case where OS or Benchmark is not selected
+      alert('Please select both OS and Benchmark.');
+    }
   }
 
   function confirmDelete() {
     setIsDeleteModalVisible(false);
   }
+
+  const isOption = (option: any): option is Option => 
+    typeof option.label === 'string' && typeof option.value === 'string';
 
   return (
     <ContentLayout>
@@ -102,7 +124,7 @@ export default function EC2Instances() {
             >
               Delete
             </Button>
-            <Button variant="primary" onClick={confirmScan}>
+            <Button variant="primary" onClick={() => setIsRunModalVisible(true)}>
               Run
             </Button>
           </SpaceBetween>
@@ -186,6 +208,67 @@ export default function EC2Instances() {
         }
       >
         Are you sure you want to delete the selected instances? This action cannot be undone.
+      </Modal>
+      <Modal
+        onDismiss={() => setIsRunModalVisible(false)}
+        visible={isRunModalVisible}
+        closeAriaLabel="Close"
+        header="Run OpenSCAP Scan"
+        footer={
+          <Box float="right">
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button variant="link" onClick={() => setIsRunModalVisible(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={confirmScan}>
+                Run
+              </Button>
+            </SpaceBetween>
+          </Box>
+        }
+      >
+        <Box padding="l">
+          <Form>
+            <FormField label="Select OS">
+              <Select
+                selectedOption={selectedOS}
+                onChange={({ detail }) => {
+                  if (isOption(detail.selectedOption)) {
+                    setSelectedOS(detail.selectedOption);
+                  }
+                }}
+                options={[
+                  { label: "Amazon Linux 2", value: "ssg-amzn2-ds.xml" },
+                  { label: "Red Hat Enterprise Linux 7", value: "ssg-rhel7-ds.xml" },
+                ]}
+              />
+            </FormField>
+            <FormField label="Select Benchmark">
+              <Select
+                selectedOption={selectedBenchmark}
+                onChange={({ detail }) => {
+                  if (isOption(detail.selectedOption)) {
+                    setSelectedBenchmark(detail.selectedOption);
+                  }
+                }}
+                options={[
+                  { label: "DISA STIG", value: "xccdf_org.ssgproject.content_profile_stig-rhel7-disa" },
+                  { label: "C2S", value: "xccdf_org.ssgproject.content_profile_C2S" },
+                  { label: "CSCF RHEL6 MLS Core Baseline", value: "xccdf_org.ssgproject.content_profile_CSCF-RHEL6-MLS" },
+                  { label: "PCI-DSS v3 Control Baseline", value: "xccdf_org.ssgproject.content_profile_pci-dss" },
+                  { label: "Standard System Security", value: "xccdf_org.ssgproject.content_profile_standard" },
+                  { label: "United States Government Configuration Baseline (USGCB)", value: "xccdf_org.ssgproject.content_profile_usgcb-rhel6-server" },
+                  { label: "Server Baseline", value: "xccdf_org.ssgproject.content_profile_server" },
+                  { label: "Red Hat Corporate Profile for Certified Cloud Providers (RH CCP)", value: "xccdf_org.ssgproject.content_profile_rht-ccp" },
+                  { label: "CNSSI 1253 Low/Low/Low Control Baseline", value: "xccdf_org.ssgproject.content_profile_nist-CL-IL-AL" },
+                  { label: "FTP Server Profile (vsftpd)", value: "xccdf_org.ssgproject.content_profile_ftp-server" },
+                  { label: "FISMA Medium", value: "xccdf_org.ssgproject.content_profile_fisma-medium-rhel6-server" },
+                  { label: "Desktop Baseline", value: "xccdf_org.ssgproject.content_profile_desktop" },
+                ]}
+              />
+            </FormField>
+          </Form>
+        </Box>
       </Modal>
     </ContentLayout>
   );

@@ -40,11 +40,11 @@ import {
     console.log("Invoking SSM document with arguments:", event.arguments);
     try {
       const command = new SendCommandCommand({
-        InstanceIds: [InstanceId],
+        InstanceIds: [event.arguments.InstanceId],
         DocumentName: DocumentName,
         Parameters: {
-          OS: [OS],
-          Benchmark: [Benchmark],
+          OS: [event.arguments.OS],
+          Benchmark: [event.arguments.Benchmark],
         },
       });
   

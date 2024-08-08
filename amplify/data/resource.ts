@@ -33,8 +33,10 @@ const schema = a.schema({
   InvokeSSM: a
     .query()
     .arguments({
-      InstanceId: a.string(),
-      DocumentName: a.string(),
+      InstanceId: a.string().required(),
+      DocumentName: a.string().required(),
+      OS: a.string().required(),
+      Benchmark: a.string().required(),
     })
     .returns(a.ref("HttpResponse"))
     .handler(a.handler.function(invokeSSM))
