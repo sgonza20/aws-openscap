@@ -49,9 +49,19 @@ import {
       });
   
       const data: SendCommandCommandOutput = await ssmClient.send(command);
+      const commandId = data.Command?.CommandId;
+
+
+      console.log("Command ID", commandId);
+      if (!commandId) {
+          return {
+              statusCode: 500,
+              body: "Failed to retrieve CommandId",
+          };
+      }
       return {
         statusCode: 200,
-        body: "OpenSCAP Scan Started",
+        body: commandId,
       };
     } catch (error) {
       console.error("Error invoking SSM document:", error);

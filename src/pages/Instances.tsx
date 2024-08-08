@@ -57,6 +57,7 @@ export default function EC2Instances() {
         data.forEach(async (instance) => {
           await client.models.Instance.create({
             InstanceId: instance?.InstanceId!,
+            CommandId: instance?.CommandId,
             PlatformName: instance?.PlatformName,
             PlatformType: instance?.PlatformType,
             LastScanTime: instance?.LastScanTime,
@@ -79,12 +80,17 @@ export default function EC2Instances() {
       Benchmark: Benchmark
     });
     console.log(data, errors);
+
     if (data?.statusCode === 200) {
+    if (typeof data.body === 'string'){
+    const commandId = data.body;
       await client.models.Instance.update({
         InstanceId: InstanceID,
         LastScanTime: new Date().toISOString(),
+        CommandId: commandId,
         ScanStatus: 'InProgress',
       });
+    }
     }
   }
 
@@ -141,11 +147,6 @@ export default function EC2Instances() {
             isRowHeader: true,
           },
           {
-            id: "platformType",
-            header: "Platform Type",
-            cell: (item) => item.PlatformType || undefined,
-          },
-          {
             id: "platformName",
             header: "Platform Name",
             cell: (item) => item.PlatformName || undefined,
@@ -154,6 +155,11 @@ export default function EC2Instances() {
             id: "lastScanTime",
             header: "Last Scan Time",
             cell: (item) => item.LastScanTime ? new Date(item.LastScanTime).toLocaleString() : 'N/A',
+          },
+          {
+            id: "CommandId",
+            header: "Run Command ID",
+            cell: (item) => item.CommandId || undefined,
           },
           {
             id: "scanStatus",
