@@ -10,6 +10,7 @@ const schema = a.schema({
       PlatformType: a.string(),
       PlatformName: a.string(),
       LastScanTime: a.string(),
+      CommandId: a.string(),
       ScanStatus: a.enum(["Success", "Failed", "InProgress"]),
     })
     .identifier(["InstanceId"])
@@ -19,6 +20,7 @@ const schema = a.schema({
     PlatformType: a.string(),
     PlatformName: a.string(),
     LastScanTime: a.string(),
+    CommandId: a.string(),
     ScanStatus: a.enum(["Success", "Failed", "InProgress"]),
   }),
   HttpResponse: a.customType({
